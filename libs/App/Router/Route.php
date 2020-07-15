@@ -13,8 +13,8 @@ declare(strict_types=1);
 
 namespace Octris\App\Router;
 
-use Octris\App\Exception;
-use Octris\App\MiddlewareDispatcher;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class Route
 {
@@ -44,18 +44,13 @@ class Route
     protected array $middleware;
 
     /**
-     * @var MiddlewareDispatcher
-     */
-    protected MiddlewareDispatcher $middleware_dispatcher;
-
-    /**
      * Constructor.
      *
      * @param   string[]        $methods
      * @param   string          $name
      * @param   string          $pattern
      * @param   callable        $controller
-     * @param   callable        ...$middleware     Optional middleware
+     * @param   string          $identifier
      */
     public function __construct(array $methods, string $name, string $pattern, callable $controller)
     {
@@ -63,8 +58,6 @@ class Route
         $this->name = $name;
         $this->pattern = $pattern;
         $this->controller = $controller;
-
-        $this->middleware_dispatcher = new MiddlewareDispatcher($this);
     }
 
     /**
@@ -95,6 +88,14 @@ class Route
     public function getPattern(): string
     {
         return $this->pattern;
+    }
+
+    /**
+     * Handle route.
+     */
+    public function handle(Request $request, Response $response): Response
+    {
+
     }
 
     /**

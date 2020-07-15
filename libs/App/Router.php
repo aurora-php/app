@@ -54,7 +54,7 @@ class Router
         $this->route_collector = $route_collector;
 
         $setup = function (\FastRoute\RouteCollector $r) {
-            foreach ($this->route_collector as $name => $route) {
+            foreach (new \RecursiveIteratorIterator($this->route_collector, \RecursiveIteratorIterator::LEAVES_ONLY) as $route) {
                 $r->addRoute(
                     $route->getMethods(),
                     $route->getPattern(),

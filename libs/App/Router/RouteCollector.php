@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Octris\App\Router;
 
 use Octris\App\Exception;
+use Octris\App\Middleware\MiddlewareCollectorTrait;
 use Octris\App\MiddlewareDispatcher;
 
 /**
@@ -25,34 +26,47 @@ use Octris\App\MiddlewareDispatcher;
 class RouteCollector implements \IteratorAggregate
 {
     /**
-     * @var callable[]
-     */
-    protected array $current_middleware = [];
-
-    /**
      * @var string
      */
-    protected string $current_group_prefix = '';
+    protected string $prefix = '';
 
     /**
-     * @var mixed[]
+     * @var Route|RouteCollector[]
      */
-    protected array $routes = [];
+    protected array $items = [];
 
     /**
      * Constructor.
      */
-    public function __construct()
+    public function __construct(string $prefix = '')
     {
+        $this->prefix = $prefix;
     }
 
-    public function getIterator(): \Generator
+    /**
+     * This implements the \RecursiveIterator interface, so it's possible to iterate all routes and subgroups of
+     * routes.
+     *
+     * @return \IteratorIterator
+     */
+    public function getIterator(): \IteratorIterator
     {
-        return (function () {
-            foreach ($this->routes as $name => $pattern) {
-                yield $name => $pattern;
+        $iterator = (function () {
+            foreach ($this->items as $key => $item) {
+                yield $key => $item;
             }
         })();
+
+        return new class($iterator) extends \IteratorIterator implements \RecursiveIterator {
+            public function getChildren()
+            {
+                return $this->current()->getIterator();
+            }
+            public function hasChildren()
+            {
+                return ($this->current() instanceof \IteratorAggregate);
+            }
+        };
     }
 
     /**
@@ -67,25 +81,17 @@ class RouteCollector implements \IteratorAggregate
     }
 
     /**
-     * Create a route group with a common prefix. All routes created in the passed callback
-     * will have the given group prefix prepended.
+     * Create a route group with a common prefix.
      *
      * @param   string          $prefix
-     * @param   callable        $group          Group configuration
-     * @param   callable        ...$middleware  Optional middleware
      */
-    public function addGroup(string $prefix, callable $group, callable ...$middleware): void
+    public function addGroup(string $prefix): RouteCollector
     {
-        $previous_middleware = $this->current_middleware;
-        $previous_group_prefix = $this->current_group_prefix;
+        $group = new RouteCollector($this->prefix . $prefix);
 
-        $this->current_middleware = array_merge($this->current_middleware, $middleware);
-        $this->current_group_prefix .= $prefix;
+        $this->items[] = $group;
 
-        $group($this);
-
-        $this->current_middleware = $previous_middleware;
-        $this->current_group_prefix = $previous_group_prefix;
+        return $group;
     }
 
     /**
@@ -98,14 +104,16 @@ class RouteCollector implements \IteratorAggregate
      */
     public function addRoute(array $methods, string $name, string $pattern, callable $controller): Route
     {
-        $this->routes[$name] = new Route(
+        $route = new Route(
             $methods,
             $name,
-            $this->current_group_prefix . $pattern,
+            $this->prefix . $pattern,
             $controller
         );
 
-        return $this->routes[$name];
+        $this->items[] = $route;
+
+        return $route;
     }
 
     /**
