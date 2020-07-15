@@ -1,0 +1,33 @@
+<?php
+
+declare(strict_types=1);
+
+/*
+ * This file is part of the 'octris/app' package.
+ *
+ * (c) Harald Lapp <harald@octris.org>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace Octris\App\Request;
+
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+/**
+ * Interface RequestHandlerInterface
+ * @package Octris\App\Request
+ */
+interface RequestHandlerInterface
+{
+    /**
+     * Handle request.
+     *
+     * @param   Request     $request
+     * @param   Response    $response
+     * @return  Response
+     */
+    public function __invoke(Request $request, Response $response): Response;
+}

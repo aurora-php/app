@@ -1,0 +1,12 @@
+<?php return array (
+  0 => 
+  array (
+    'GET' => 
+    array (
+      '/admin/login' => 'login',
+    ),
+  ),
+  1 => 
+  array (
+  ),
+);
