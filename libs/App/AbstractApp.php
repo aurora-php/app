@@ -13,10 +13,9 @@ declare(strict_types=1);
 
 namespace Octris\App;
 
-use Octris\App\Middleware\MiddlewareDispatcherInterface;
+use Octris\App\Request\AbstractRequestHandler;
 use Octris\App\Request\RequestHandlerInterface;
-use RouterInterface;
-use Octris\Config;
+use Psr\Container\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -26,7 +25,7 @@ use Symfony\Component\HttpFoundation\Response;
  * @copyright   copyright (c) 2020-present by Harald Lapp
  * @author      Harald Lapp <harald@octris.org>
  */
-abstract class AbstractApp
+abstract class AbstractApp implements RequestHandlerInterface
 {
     /**
      * Router instance.
@@ -34,27 +33,6 @@ abstract class AbstractApp
      * @var Router
      */
     protected Router $router;
-
-    /**
-     * Application configuration.
-     *
-     * @var Config
-     */
-    protected Config $config;
-
-    /**
-     * Request instance.
-     *
-     * @var Request
-     */
-    private Request $request;
-
-    /**
-     * Response instance.
-     *
-     * @var Response|null
-     */
-    private ?Response $response = null;
 
     /**
      * State instance.
@@ -66,60 +44,24 @@ abstract class AbstractApp
     /**
      * @var MiddlewareDispatcher
      */
-    private MiddlewareDispatcher $middleware_dispatcher;
+    protected MiddlewareDispatcher $middleware_dispatcher;
+
+    /**
+     * @var ContainerInterface
+     */
+    protected ?ContainerInterface $container;
 
     /**
      * Constructor.
      *
-     * @param   Config                          $config
      * @param   Router                          $router
+     * @param   ContainerInterface              $container
      */
-    public function __construct(/*Config $config,*/ Router $router, ?MiddlewareDispatcherInterface $middleware_dispatcher = null)
+    public function __construct(Router $router, ?ContainerInterface $container = null)
     {
         $this->router = $router;
-
-        $handler = new class($this) implements RequestHandlerInterface {
-            public function __construct(private AbstractApp $app)
-            {
-            }
-
-            public function __invoke(Request $request, Response $response): Response
-            {
-                return $this->app->handle($request, $response);
-            }
-        };
-
-        if (is_null($middleware_dispatcher)) {
-            $middleware_dispatcher = new MiddlewareDispatcher($handler);
-        } else {
-            $middleware_dispatcher->setRequestHandler($handler);
-        }
-
-        $this->middleware_dispatcher = $middleware_dispatcher;
-    }
-
-    /**
-     * Return request instance
-     *
-     * @return  Request
-     */
-    public function getRequest(): Request
-    {
-        return $this->request;
-    }
-
-    /**
-     * Return response instance, create one on the first call.
-     *
-     * @return  Response
-     */
-    public function getResponse(): Response
-    {
-        if (is_null($this->response)) {
-            $this->response = new Response();
-        }
-
-        return $this->response;
+        $this->container = $container;
+        $this->middleware_dispatcher = new MiddlewareDispatcher($this, $container);
     }
 
     /**
@@ -143,32 +85,47 @@ abstract class AbstractApp
     /**
      * Initialize application.
      */
-    protected function initialize(): void
+    abstract protected function initialize(): void;
+
+    /**
+     * Add middleware.
+     *
+     * @param   mixed           $middleware
+     * @return  mixed
+     */
+    public function addMiddleware(mixed $middleware): self
     {
-        $this->request = Request::createFromGlobals();
-        $this->response = new Response();
+        $this->middleware_dispatcher->addMiddleware($middleware);
+
+        return $this;
     }
 
     /**
      * Handle request.
      *
      * @param   Request     $request
-     * @param   Response    $response
-     * @return  Response    $response
+     * @return  Response
      */
-    public function handle(Request $request, Response $response): Response
+    public function handle(Request $request): Response
     {
-        return $this->router->route($this, $request, $response);
+        return $this->router->handle($request);
     }
 
     /**
      * Application main loop.
+     *
+     * @param   ?Request        $request
      */
-    final public function run(): void
+    final public function run(?Request $request = null): void
     {
+        if (is_null($request)) {
+            $request = Request::createFromGlobals();
+        }
+
         $this->initialize();
 
-        $response = $this->middleware_dispatcher->handle($this->request, $this->response);
+        $response = $this->middleware_dispatcher->handle($request);
+        $response->prepare($request);
         $response->send();
     }
 }
