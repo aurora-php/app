@@ -13,14 +13,17 @@ declare(strict_types=1);
 
 namespace Octris\App;
 
+use Octris\App\Middleware\AbstractMiddlewareHandler;
 use RouterInterface;
 use Octris\Config;
-use Octris\App\Middleware\MiddlewareDispatcherInterface;
+use Octris\App\Exception\InvalidArgumentException;
+use Octris\App\Middleware\MiddlewareInterface;
 use Octris\App\Request\RequestHandlerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Psr\Container\ContainerInterface;
 
-class MiddlewareDispatcher implements MiddlewareDispatcherInterface
+class MiddlewareDispatcher implements RequestHandlerInterface
 {
     /**
      * @var RequestHandlerInterface
@@ -28,71 +31,58 @@ class MiddlewareDispatcher implements MiddlewareDispatcherInterface
     private RequestHandlerInterface $tip;
 
     /**
-     * @var ContainerInterface
+     * @var ContainerInterface|null
      */
-    private ContainerInterface $container;
+    private ?ContainerInterface $container;
 
     /**
      * Constructor.
      */
-    public function __construct(RequestHandlerInterface $handler, Container $container = null)
+    public function __construct(RequestHandlerInterface $handler, ?ContainerInterface $container = null)
     {
         $this->setRequestHandler($handler);
+        $this->container = $container;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    public function handle(Request $request): Response
+    {
+        return $this->tip->handle($request);
+    }
+
     public function setRequestHandler(RequestHandlerInterface $handler)
     {
         $this->tip = $handler;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function addMiddleware(MiddlewareInterface|callable|string $middleware): self
+    public function addMiddleware(mixed $middleware): self
     {
         $next = $this->tip;
 
-        $this->top = new class($next, $middleware, $this->container) implements RequestHandlerInterface {
-            private RequestHandlerInterface $next;
-            private mixed $middleware;
-            private Container $container;
-
-            public function __construct(RequestHandlerInterface $next, MiddlewareInterface|callable|string $middleware, Container $container)
-            {
-                $this->next = $next;
-                $this->middleware = $middleware;
-                $this->container = $container;
-            }
-
-            public function handle(Request $request, Response $response)
-            {
-                if (is_string($this->middleware)) {
-                    if (!class_implements($this->middleware, MiddlewareInterface)) {
-                        throw new \RuntimeException();
-                    }
-
-                    $this->middleware = new ($this->middleware)();
+        if (is_string($middleware)) {
+            $this->tip = new class($next, $middleware, $this->container) extends AbstractMiddlewareHandler {
+                public function handle(Request $request): Response
+                {
+                    return (new ($this->middleware)($this->container))->handle($request, $this->next);
                 }
-
-                if ($this->middleware instanceof MiddlewareInterface) {
-                    $response = $this->middleware->handle($request, $response, $this->next);
-                } else {
-                    $response = ($this->middleware)($request, $response, $this->next);
+            };
+        } elseif (is_callable($middleware)) {
+            $this->tip = new class($next, $middleware, $this->container) extends AbstractMiddlewareHandler {
+                public function handle(Request $request): Response
+                {
+                    return ($this->middleware)($request, $this->next);
                 }
+            };
+        } elseif ($middleware instanceof MiddlewareInterface) {
+            $this->tip = new class($next, $middleware, $this->container) extends AbstractMiddlewareHandler {
+                public function handle(Request $request): Response
+                {
+                    return $this->middleware->handle($request, $this->next);
+                }
+            };
+        } else {
+            throw new InvalidArgumentException('Middleware must bei either a classname, a callable or a object instance implementing MiddlewareInterface.');
+        }
 
-                return $response;
-            }
-        };
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function handle(Request $request, Response $response): Response
-    {
-        return $this->tip->handle($request, $response);
+        return $this;
     }
 }
