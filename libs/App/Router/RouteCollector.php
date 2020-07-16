@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Octris\App\Router;
 
 use Octris\App\Middleware\MiddlewareInterface;
+use Psr\Container\ContainerInterface;
 
 /**
  * Router class.
@@ -44,10 +45,16 @@ class RouteCollector implements \IteratorAggregate
     protected ?RouteCollector $group = null;
 
     /**
+     * @var ContainerInterface|null
+     */
+    protected ?ContainerInterface $container;
+
+    /**
      * Constructor.
      */
-    public function __construct(string $prefix = '')
+    public function __construct(?ContainerInterface $container = null, string $prefix = '')
     {
+        $this->container = $container;
         $this->prefix = $prefix;
     }
 
@@ -85,10 +92,10 @@ class RouteCollector implements \IteratorAggregate
      */
     public function addGroup(string $prefix): RouteCollector
     {
-        $group = new class($this->prefix . $prefix, $this->routes, $this) extends RouteCollector {
-            public function __construct(string $prefix, array &$routes, RouteCollector $group)
+        $group = new class($this->container, $this->prefix . $prefix, $this->routes, $this) extends RouteCollector {
+            public function __construct(?ContainerInterface $container, string $prefix, array &$routes, RouteCollector $group)
             {
-                parent::__construct($prefix);
+                parent::__construct($container, $prefix);
 
                 $this->routes =& $routes;
                 $this->group = $group;
@@ -104,16 +111,17 @@ class RouteCollector implements \IteratorAggregate
      * @param   string[]        $methods
      * @param   string          $name
      * @param   string          $pattern
-     * @param   callable        $controller
+     * @param   mixed           $handler
      */
-    public function addRoute(array $methods, string $name, string $pattern, callable $controller): Route
+    public function addRoute(array $methods, string $name, string $pattern, mixed $handler): Route
     {
         $route = new Route(
             $methods,
             $name,
             $this->prefix . $pattern,
-            $controller,
-            $this
+            $handler,
+            $this,
+            $this->container
         );
 
         $this->routes[$name] = $route;

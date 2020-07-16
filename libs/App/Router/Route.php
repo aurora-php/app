@@ -14,9 +14,12 @@ declare(strict_types=1);
 namespace Octris\App\Router;
 
 use Octris\App\MiddlewareDispatcher;
+use Octris\App\Request\AbstractRequestHandler;
 use Octris\App\Request\RequestHandlerInterface;
+use Octris\App\Exception\InvalidArgumentException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Psr\Container\ContainerInterface;
 
 class Route implements RequestHandlerInterface
 {
@@ -36,11 +39,6 @@ class Route implements RequestHandlerInterface
     protected string $pattern;
 
     /**
-     * @var callable
-     */
-    protected $controller;
-
-    /**
      * @var RouteCollector
      */
     protected RouteCollector $group;
@@ -58,34 +56,45 @@ class Route implements RequestHandlerInterface
     /**
      * Constructor.
      *
-     * @param   string[]        $methods
-     * @param   string          $name
-     * @param   string          $pattern
-     * @param   callable        $controller
-     * @param   string          $identifier
-     * @param   RouteCollector  $group
+     * @param   string[]            $methods
+     * @param   string              $name
+     * @param   string              $pattern
+     * @param   mixed               $handler
+     * @param   string              $identifier
+     * @param   RouteCollector      $group
+     * @param   ?ContainerInterface $container
      */
-    public function __construct(array $methods, string $name, string $pattern, callable $controller, RouteCollector $group)
+    public function __construct(array $methods, string $name, string $pattern, mixed $handler, RouteCollector $group, ?ContainerInterface $container)
     {
         $this->methods = $methods;
         $this->name = $name;
         $this->pattern = $pattern;
-        $this->controller = $controller;
         $this->group = $group;
 
-        $handler = new class($controller) implements RequestHandlerInterface {
-            private $controller;
-
-            public function __construct(callable $controller)
-            {
-                $this->controller = $controller;
-            }
-
-            public function handle(Request $request): Response
-            {
-                return ($this->controller)($request);
-            }
-        };
+        if (is_string($handler)) {
+            $handler = new class($handler, $container) extends AbstractRequestHandler {
+                public function handle(Request $request): Response
+                {
+                    return (new ($this->handler)($this->container))->handle($request);
+                }
+            };
+        } elseif (is_callable($handler)) {
+            $handler = new class($handler, $container) extends AbstractRequestHandler {
+                public function handle(Request $request): Response
+                {
+                    return ($this->handler)($request);
+                }
+            };
+        } elseif ($handler instanceof RequestHandlerInterface) {
+            $handler = new class($handler, $container) extends AbstractRequestHandler {
+                public function handle(Request $request): Response
+                {
+                    return $this->handler->handle($request);
+                }
+            };
+        } else {
+            throw new InvalidArgumentException('Handler must bei either a classname, a callable or an object instance implementing RequestHandlerInterface.');
+        }
 
         $this->middleware_dispatcher = new MiddlewareDispatcher($handler);
     }
