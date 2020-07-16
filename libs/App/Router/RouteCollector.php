@@ -13,11 +13,7 @@ declare(strict_types=1);
 
 namespace Octris\App\Router;
 
-use Octris\App\Exception;
 use Octris\App\Middleware\MiddlewareInterface;
-use Octris\App\MiddlewareDispatcher;
-use Octris\App\Request\RequestHandlerInterface;
-use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Router class.

@@ -13,8 +13,6 @@ declare(strict_types=1);
 
 namespace Octris\App\Router;
 
-use Octris\App\Middleware\MiddlewareDispatcherTrait;
-use Octris\App\MiddlewareCollector;
 use Octris\App\MiddlewareDispatcher;
 use Octris\App\Request\RequestHandlerInterface;
 use Symfony\Component\HttpFoundation\Request;

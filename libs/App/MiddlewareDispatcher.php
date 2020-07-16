@@ -14,8 +14,6 @@ declare(strict_types=1);
 namespace Octris\App;
 
 use Octris\App\Middleware\AbstractMiddlewareHandler;
-use RouterInterface;
-use Octris\Config;
 use Octris\App\Exception\InvalidArgumentException;
 use Octris\App\Middleware\MiddlewareInterface;
 use Octris\App\Request\RequestHandlerInterface;
