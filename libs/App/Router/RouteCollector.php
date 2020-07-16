@@ -156,10 +156,11 @@ class RouteCollector implements \IteratorAggregate
      * @param   string          $name
      * @param   string          $pattern
      * @param   callable        $controller
+     * @return  Route
      */
-    public function get(string $name, string $pattern, callable $controller): void
+    public function get(string $name, string $pattern, callable $controller): Route
     {
-        $this->addRoute([ 'GET' ], $name, $pattern, $controller);
+        return $this->addRoute([ 'GET' ], $name, $pattern, $controller);
     }
 
     /**
@@ -168,10 +169,11 @@ class RouteCollector implements \IteratorAggregate
      * @param   string          $name
      * @param   string          $pattern
      * @param   callable        $controller
+     * @return  Route
      */
-    public function post(string $name, string $pattern, callable $controller): void
+    public function post(string $name, string $pattern, callable $controller): Route
     {
-        $this->addRoute([ 'POST' ], $name, $pattern, $controller);
+        return $this->addRoute([ 'POST' ], $name, $pattern, $controller);
     }
 
     /**
@@ -180,10 +182,11 @@ class RouteCollector implements \IteratorAggregate
      * @param   string          $name
      * @param   string          $pattern
      * @param   callable        $controller
+     * @return  Route
      */
-    public function put(string $name, string $pattern, callable $controller): void
+    public function put(string $name, string $pattern, callable $controller): Route
     {
-        $this->addRoute([ 'PUT' ], $name, $pattern, $controller);
+        return $this->addRoute([ 'PUT' ], $name, $pattern, $controller);
     }
 
     /**
@@ -192,10 +195,11 @@ class RouteCollector implements \IteratorAggregate
      * @param   string          $name
      * @param   string          $pattern
      * @param   callable        $controller
+     * @return  Route
      */
-    public function delete(string $name, string $pattern, callable $controller): void
+    public function delete(string $name, string $pattern, callable $controller): Route
     {
-        $this->addRoute([ 'DELETE' ], $name, $pattern, $controller);
+        return $this->addRoute([ 'DELETE' ], $name, $pattern, $controller);
     }
 
     /**
@@ -204,10 +208,11 @@ class RouteCollector implements \IteratorAggregate
      * @param   string          $name
      * @param   string          $pattern
      * @param   callable        $controller
+     * @return  Route
      */
-    public function patch(string $name, string $pattern, callable $controller): void
+    public function patch(string $name, string $pattern, callable $controller): Route
     {
-        $this->addRoute([ 'PATCH' ], $name, $pattern, $controller);
+        return $this->addRoute([ 'PATCH' ], $name, $pattern, $controller);
     }
 
     /**
@@ -216,10 +221,11 @@ class RouteCollector implements \IteratorAggregate
      * @param   string          $name
      * @param   string          $pattern
      * @param   callable        $controller
+     * @return  Route
      */
-    public function head(string $name, string $pattern, callable $controller): void
+    public function head(string $name, string $pattern, callable $controller): Route
     {
-        $this->addRoute([ 'HEAD' ], $name, $pattern, $controller);
+        return $this->addRoute([ 'HEAD' ], $name, $pattern, $controller);
     }
 
     /**
@@ -228,9 +234,10 @@ class RouteCollector implements \IteratorAggregate
      * @param   string          $name
      * @param   string          $pattern
      * @param   callable        $controller
+     * @return  Route
      */
-    public function options(string $name, string $pattern, callable $controller): void
+    public function options(string $name, string $pattern, callable $controller): Route
     {
-        $this->addRoute([ 'OPTIONS' ], $name, $pattern, $controller);
+        return $this->addRoute([ 'OPTIONS' ], $name, $pattern, $controller);
     }
 }
