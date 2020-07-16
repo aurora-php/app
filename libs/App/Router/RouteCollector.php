@@ -14,8 +14,10 @@ declare(strict_types=1);
 namespace Octris\App\Router;
 
 use Octris\App\Exception;
-use Octris\App\Middleware\MiddlewareCollectorTrait;
+use Octris\App\Middleware\MiddlewareInterface;
 use Octris\App\MiddlewareDispatcher;
+use Octris\App\Request\RequestHandlerInterface;
+use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Router class.
@@ -31,9 +33,19 @@ class RouteCollector implements \IteratorAggregate
     protected string $prefix = '';
 
     /**
-     * @var Route|RouteCollector[]
+     * @var Route[]
      */
-    protected array $items = [];
+    protected array $routes = [];
+
+    /**
+     * @var MiddlewareInterface[]
+     */
+    protected array $middleware = [];
+
+    /**
+     * @var ?RouteCollector
+     */
+    protected ?RouteCollector $group = null;
 
     /**
      * Constructor.
@@ -49,24 +61,13 @@ class RouteCollector implements \IteratorAggregate
      *
      * @return \IteratorIterator
      */
-    public function getIterator(): \IteratorIterator
+    public function getIterator(): \Generator
     {
-        $iterator = (function () {
-            foreach ($this->items as $key => $item) {
-                yield $key => $item;
+        return (function () {
+            foreach ($this->routes as $name => $route) {
+                yield $name => $route;
             }
         })();
-
-        return new class($iterator) extends \IteratorIterator implements \RecursiveIterator {
-            public function getChildren()
-            {
-                return $this->current()->getIterator();
-            }
-            public function hasChildren()
-            {
-                return ($this->current() instanceof \IteratorAggregate);
-            }
-        };
     }
 
     /**
@@ -84,12 +85,19 @@ class RouteCollector implements \IteratorAggregate
      * Create a route group with a common prefix.
      *
      * @param   string          $prefix
+     * @return  RouteCollector
      */
     public function addGroup(string $prefix): RouteCollector
     {
-        $group = new RouteCollector($this->prefix . $prefix);
+        $group = new class($this->prefix . $prefix, $this->routes, $this) extends RouteCollector {
+            public function __construct(string $prefix, array &$routes, RouteCollector $group)
+            {
+                parent::__construct($prefix);
 
-        $this->items[] = $group;
+                $this->routes =& $routes;
+                $this->group = $group;
+            }
+        };
 
         return $group;
     }
@@ -108,12 +116,38 @@ class RouteCollector implements \IteratorAggregate
             $methods,
             $name,
             $this->prefix . $pattern,
-            $controller
+            $controller,
+            $this
         );
 
-        $this->items[] = $route;
+        $this->routes[$name] = $route;
 
         return $route;
+    }
+
+    /**
+     * Add middleware to collection.
+     *
+     * @param   MiddlewareInterface     $middleware
+     * @return  self
+     */
+    public function addMiddleware(MiddlewareInterface $middleware): self
+    {
+        $this->middleware[] = $middleware;
+
+        return $this;
+    }
+
+    /**
+     * Return middleware of current and parent group(s).
+     *
+     * @return  MiddlewareInterface[]
+     */
+    public function getAllMiddleware(): array
+    {
+        $parent = (is_null($this->group) ? [] : $this->group->getAllMiddleware());
+
+        return array_merge($parent, $this->middleware);
     }
 
     /**
@@ -122,11 +156,10 @@ class RouteCollector implements \IteratorAggregate
      * @param   string          $name
      * @param   string          $pattern
      * @param   callable        $controller
-     * @param   callable        ...$middleware  Optional middleware
      */
-    public function get(string $name, string $pattern, callable $controller, callable ...$middleware): void
+    public function get(string $name, string $pattern, callable $controller): void
     {
-        $this->addRoute([ 'GET' ], $name, $pattern, $controller, ...$middleware);
+        $this->addRoute([ 'GET' ], $name, $pattern, $controller);
     }
 
     /**
@@ -135,11 +168,10 @@ class RouteCollector implements \IteratorAggregate
      * @param   string          $name
      * @param   string          $pattern
      * @param   callable        $controller
-     * @param   callable        ...$middleware  Optional middleware
      */
-    public function post(string $name, string $pattern, callable $controller, callable ...$middleware): void
+    public function post(string $name, string $pattern, callable $controller): void
     {
-        $this->addRoute([ 'POST' ], $name, $pattern, $controller, ...$middleware);
+        $this->addRoute([ 'POST' ], $name, $pattern, $controller);
     }
 
     /**
@@ -148,11 +180,10 @@ class RouteCollector implements \IteratorAggregate
      * @param   string          $name
      * @param   string          $pattern
      * @param   callable        $controller
-     * @param   callable        ...$middleware  Optional middleware
      */
-    public function put(string $name, string $pattern, callable $controller, callable ...$middleware): void
+    public function put(string $name, string $pattern, callable $controller): void
     {
-        $this->addRoute([ 'PUT' ], $name, $pattern, $controller, ...$middleware);
+        $this->addRoute([ 'PUT' ], $name, $pattern, $controller);
     }
 
     /**
@@ -161,11 +192,10 @@ class RouteCollector implements \IteratorAggregate
      * @param   string          $name
      * @param   string          $pattern
      * @param   callable        $controller
-     * @param   callable        ...$middleware  Optional middleware
      */
-    public function delete(string $name, string $pattern, callable $controller, callable ...$middleware): void
+    public function delete(string $name, string $pattern, callable $controller): void
     {
-        $this->addRoute([ 'DELETE' ], $name, $pattern, $controller, ...$middleware);
+        $this->addRoute([ 'DELETE' ], $name, $pattern, $controller);
     }
 
     /**
@@ -174,11 +204,10 @@ class RouteCollector implements \IteratorAggregate
      * @param   string          $name
      * @param   string          $pattern
      * @param   callable        $controller
-     * @param   callable        ...$middleware  Optional middleware
      */
-    public function patch(string $name, string $pattern, callable $controller, callable ...$middleware): void
+    public function patch(string $name, string $pattern, callable $controller): void
     {
-        $this->addRoute([ 'PATCH' ], $name, $pattern, $controller, ...$middleware);
+        $this->addRoute([ 'PATCH' ], $name, $pattern, $controller);
     }
 
     /**
@@ -187,11 +216,10 @@ class RouteCollector implements \IteratorAggregate
      * @param   string          $name
      * @param   string          $pattern
      * @param   callable        $controller
-     * @param   callable        ...$middleware  Optional middleware
      */
-    public function head(string $name, string $pattern, callable $controller, callable ...$middleware): void
+    public function head(string $name, string $pattern, callable $controller): void
     {
-        $this->addRoute([ 'HEAD' ], $name, $pattern, $controller, ...$middleware);
+        $this->addRoute([ 'HEAD' ], $name, $pattern, $controller);
     }
 
     /**
@@ -200,10 +228,9 @@ class RouteCollector implements \IteratorAggregate
      * @param   string          $name
      * @param   string          $pattern
      * @param   callable        $controller
-     * @param   callable        ...$middleware  Optional middleware
      */
-    public function options(string $name, string $pattern, callable $controller, callable ...$middleware): void
+    public function options(string $name, string $pattern, callable $controller): void
     {
-        $this->addRoute([ 'OPTIONS' ], $name, $pattern, $controller, ...$middleware);
+        $this->addRoute([ 'OPTIONS' ], $name, $pattern, $controller);
     }
 }
