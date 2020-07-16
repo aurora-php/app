@@ -93,10 +93,18 @@ class Router
 
         switch ($result[0]) {
             case \FastRoute\Dispatcher::NOT_FOUND:
-/*                $next_page = new lima_page_error($app, 404); */
+                $response = new Response(
+                    '',
+                    Response::HTTP_NOT_FOUND,
+                    ['content-type' => 'text/html']
+                );
                 break;
             case \FastRoute\Dispatcher::METHOD_NOT_ALLOWED:
-/*                $next_page = new lima_page_error($app, 405); */
+                $response = new Response(
+                    '',
+                    Response::HTTP_METHOD_NOT_ALLOWED,
+                    ['content-type' => 'text/html']
+                );
                 break;
             case \FastRoute\Dispatcher::FOUND:
                 $request->request->add($result[2]);
@@ -119,7 +127,10 @@ class Router
 //        $last_page = $app->getLastPage();
 
         // routing
-        $next_page = $this->routing($request); //, $last_page);
+        $response = $this->routing($request); //, $last_page);
+
+        $response->prepare($request);
+        $response->send();
 
 /*        $next_page = $this->rerouting($app, $last_page, $next_page);
 
