@@ -119,7 +119,8 @@ class Router
     /**
      * Initiate routing.
      *
-     * @param   AbstractApp         $app            Instance of application.
+     * @param   Request     $request
+     * @return  Response
      */
     public function handle(Request $request)
     {
@@ -129,8 +130,7 @@ class Router
         // routing
         $response = $this->routing($request); //, $last_page);
 
-        $response->prepare($request);
-        $response->send();
+        return $response;
 
 /*        $next_page = $this->rerouting($app, $last_page, $next_page);
 
