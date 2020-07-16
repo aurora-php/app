@@ -13,17 +13,14 @@ declare(strict_types=1);
 
 namespace Octris\App\Middleware;
 
+use Octris\App\Request\RequestHandlerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * Interface for implementing middleware.
+ */
 interface MiddlewareInterface
 {
-    /**
-     * Handle request.
-     *
-     * @param   Request     $request
-     * @param   Response    $response
-     * @return  Response
-     */
-    public function handle(Request $request, Response $response, RequestHandlerInterface $handler): Response;
+    public function handle(Request $request, RequestHandlerInterface $handler): Response;
 }
