@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Octris\App;
 
+use Octris\App\Request\RequestHandlerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -54,7 +55,7 @@ class Router
         $this->route_collector = $route_collector;
 
         $setup = function (\FastRoute\RouteCollector $r) {
-            foreach (new \RecursiveIteratorIterator($this->route_collector, \RecursiveIteratorIterator::LEAVES_ONLY) as $route) {
+            foreach ($this->route_collector as $route) {
                 $r->addRoute(
                     $route->getMethods(),
                     $route->getPattern(),
@@ -76,11 +77,12 @@ class Router
 
     /**
      * Routing.
+     *
+     * @param   Request     $request
+     * @return  Response
      */
-    protected function routing(AbstractApp $app, Request $request, Response $response) //, lima_page $last_page)
+    protected function routing(Request $request): Response
     {
-
-
         $result = $this->dispatcher->dispatch(
             $request->getMethod(),
             parse_url(  // https://github.com/nikic/FastRoute/issues/19
@@ -100,21 +102,10 @@ class Router
                 $request->request->add($result[2]);
 
                 $route = $this->route_collector->getRoute($result[1]);
-
-
-
-                do {
-                    foreach ($route->getMiddleware() as $middleware) {
-                        if (!$middleware($app, $request, $response)) {
-                            break 2;
-                        }
-                    }
-
-                    $route->getController()($app, $request, $response);
-                } while (false);
-
-                break;
+                $response = $route->handle($request);
         }
+
+        return $response;
     }
 
     /**
@@ -122,15 +113,13 @@ class Router
      *
      * @param   AbstractApp         $app            Instance of application.
      */
-    public function route(AbstractApp $app, Request $request, Response $response)
+    public function handle(Request $request)
     {
         // determine last page
 //        $last_page = $app->getLastPage();
 
         // routing
-        $next_page = $this->routing($app, $request, $response); //, $last_page);
-
-        return new Response();
+        $next_page = $this->routing($request); //, $last_page);
 
 /*        $next_page = $this->rerouting($app, $last_page, $next_page);
 
