@@ -59,10 +59,9 @@ class RouteCollector implements \IteratorAggregate
     }
 
     /**
-     * This implements the \RecursiveIterator interface, so it's possible to iterate all routes and subgroups of
-     * routes.
+     * Iteratre and return routes.
      *
-     * @return \IteratorIterator
+     * @return \Generator
      */
     public function getIterator(): \Generator
     {
