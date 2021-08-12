@@ -21,6 +21,12 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Psr\Container\ContainerInterface;
 
+/**
+ * Route class.
+ *
+ * @copyright   copyright (c) 2020-present by Harald Lapp
+ * @author      Harald Lapp <harald@octris.org>
+ */
 class Route implements RequestHandlerInterface
 {
     /**

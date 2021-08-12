@@ -23,7 +23,6 @@ use Symfony\Component\HttpFoundation\Response;
  * @copyright   copyright (c) 2020-present by Harald Lapp
  * @author      Harald Lapp <harald@octris.org>
  */
-
 class Router
 {
     /**

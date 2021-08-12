@@ -17,7 +17,7 @@ use Octris\App\Middleware\MiddlewareInterface;
 use Psr\Container\ContainerInterface;
 
 /**
- * Router class.
+ * Class for collecting and grouping routes.
  *
  * @copyright   copyright (c) 2020-present by Harald Lapp
  * @author      Harald Lapp <harald@octris.org>

@@ -11,7 +11,5 @@
 
 namespace Octris\App\Exception;
 
-use Octris\App\RuntimeException;
-
-class StateDecodingException extends RuntimeException {
+class RuntimeException extends \RuntimeException {
 }

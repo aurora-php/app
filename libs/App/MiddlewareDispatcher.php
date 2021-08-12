@@ -21,6 +21,12 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Psr\Container\ContainerInterface;
 
+/**
+ * Middleware dispatcher.
+ *
+ * @copyright   copyright (c) 2020-present by Harald Lapp
+ * @author      Harald Lapp <harald@octris.org>
+ */
 class MiddlewareDispatcher implements RequestHandlerInterface
 {
     /**
@@ -52,7 +58,7 @@ class MiddlewareDispatcher implements RequestHandlerInterface
         $this->tip = $handler;
     }
 
-    public function addMiddleware(mixed $middleware): self
+    public function addMiddleware(string|callable|MiddlewareInterface $middleware): self
     {
         $next = $this->tip;
 
@@ -77,8 +83,6 @@ class MiddlewareDispatcher implements RequestHandlerInterface
                     return $this->middleware->handle($request, $this->next);
                 }
             };
-        } else {
-            throw new InvalidArgumentException('Middleware must bei either a classname, a callable or a object instance implementing MiddlewareInterface.');
         }
 
         return $this;

@@ -18,7 +18,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Interface RequestHandlerInterface
- * @package Octris\App\Request
+ *
+ * @copyright   copyright (c) 2020-present by Harald Lapp
+ * @author      Harald Lapp <harald@octris.org>
  */
 interface RequestHandlerInterface
 {
