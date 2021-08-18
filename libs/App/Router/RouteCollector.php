@@ -51,6 +51,9 @@ class RouteCollector implements \IteratorAggregate
 
     /**
      * Constructor.
+     *
+     * @param ContainerInterface    $container
+     * @param string                $prefix
      */
     public function __construct(?ContainerInterface $container = null, string $prefix = '')
     {
@@ -59,7 +62,7 @@ class RouteCollector implements \IteratorAggregate
     }
 
     /**
-     * Iteratre and return routes.
+     * Iterate and return routes.
      *
      * @return \Generator
      */
