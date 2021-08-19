@@ -99,7 +99,7 @@ class Route implements RequestHandlerInterface
                 }
             };
         } else {
-            throw new InvalidArgumentException('Handler must bei either a classname, a callable or an object instance implementing RequestHandlerInterface.');
+            throw new InvalidArgumentException('Handler must be either a classname, a callable or an object instance implementing RequestHandlerInterface.');
         }
 
         $this->middleware_dispatcher = new MiddlewareDispatcher($handler);
