@@ -93,7 +93,7 @@ class Router
         switch ($result[0]) {
             case \FastRoute\Dispatcher::NOT_FOUND:
                 $response = new Response(
-                    '',
+                    '404 Not Found',
                     Response::HTTP_NOT_FOUND,
                     ['content-type' => 'text/html']
                 );
