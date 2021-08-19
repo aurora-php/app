@@ -123,22 +123,8 @@ class Router
      */
     public function handle(Request $request)
     {
-        // determine last page
-//        $last_page = $app->getLastPage();
-
-        // routing
-        $response = $this->routing($request); //, $last_page);
+        $response = $this->routing($request);
 
         return $response;
-
-/*        $next_page = $this->rerouting($app, $last_page, $next_page);
-
-        $next_page = $app->redirectPage($next_page);
-
-        // process with page
-        $app->setLastPage($next_page);
-
-        $next_page->prepareMessages($app);
-        $next_page->render($app);*/
     }
 }
