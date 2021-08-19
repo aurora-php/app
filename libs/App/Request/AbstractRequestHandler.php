@@ -34,7 +34,7 @@ abstract class AbstractRequestHandler implements RequestHandlerInterface
     protected ?ContainerInterface $container;
 
     /**
-     * AbstractMiddlewareHandler constructor.
+     * AbstractRequestHandler constructor.
      *
      * @param RequestHandlerInterface $next
      * @param mixed $middleware
