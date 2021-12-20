@@ -106,7 +106,7 @@ class Router
                 );
                 break;
             case \FastRoute\Dispatcher::FOUND:
-                $request->request->add($result[2]);
+                $request->query->add($result[2]);
 
                 $route = $this->route_collector->getRoute($result[1]);
                 $response = $route->handle($request);
